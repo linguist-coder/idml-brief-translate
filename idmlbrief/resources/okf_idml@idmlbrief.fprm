@@ -1,0 +1,14 @@
+#v1
+extractNotes.b=false
+extractMasterSpreads.b=true
+extractHiddenLayers.b=false
+extractHiddenPasteboardItems.b=false
+extractIndexTopics.b=false
+skipDiscretionaryHyphens.b=false
+extractBreaksInline.b=false
+extractHyperlinkTextSourcesInline.b=false
+extractCustomTextVariables.b=false
+extractExternalHyperlinks.b=false
+extractMathZones.b=false
+untagXmlStructures.b=true
+mergeAdjacentCodes.b=false

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IDML Brief Translate</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--mut:#666;--line:#ddd;--pane:#f6f6f8;--acc:#2456c8;--err:#b00020;--warn:#8a5a00;--ok:#1b7a3a}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1b1d;--fg:#ececec;--mut:#a0a0a0;--line:#3a3a3e;--pane:#242428;--acc:#7aa2ff;--err:#ff6b7f;--warn:#e0b050;--ok:#5fc27e}}
+body{margin:0;font:14px/1.5 system-ui,"Segoe UI","Yu Gothic UI",sans-serif;background:var(--bg);color:var(--fg)}
+header{display:flex;gap:4px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header b{margin-right:16px}
+nav button{border:0;background:none;color:var(--mut);padding:6px 10px;border-radius:6px;cursor:pointer;font:inherit}
+nav button.on{background:var(--pane);color:var(--fg);font-weight:600}
+main{padding:16px;max-width:1200px}
+section{display:none}section.on{display:block}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+th{background:var(--pane)}
+input,select,textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:3px 5px}
+textarea{width:100%;box-sizing:border-box}
+button.b{font:inherit;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--pane);color:var(--fg);cursor:pointer}
+button.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+button:disabled{opacity:.5;cursor:default}
+.box{background:var(--pane);padding:10px 12px;border-radius:6px;margin:8px 0}
+.err{color:var(--err)}.warn{color:var(--warn)}.ok{color:var(--ok)}.mut{color:var(--mut)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+code,.mono{font:12px Consolas,monospace}
+#status{margin-left:auto;color:var(--mut)}
+#rules td input{width:100%;min-width:0;box-sizing:border-box}
+</style>
+</head>
+<body>
+<header>
+  <b>IDML Brief Translate</b>
+  <nav id="nav">
+    <button data-s="brief" class="on">1 Brief</button>
+    <button data-s="doc">2 Document</button>
+    <button data-s="run">3 Translate &amp; review</button>
+    <button data-s="find">4 Findings &amp; edit</button>
+    <button data-s="exp">5 Export</button>
+  </nav>
+  <span id="status"></span>
+</header>
+<main>
+<section id="brief" class="on">
+  <p class="mut">Write the rules the translation must follow. Rules of type term, keep, digits and styled are checked by the app; free rules are checked by the review model.</p>
+  <div class="row"><label>Name <input id="bname" size="40"></label>
+    <button class="b" id="addrule">Add rule</button><button class="b" id="resetbrief">Reset to template</button>
+    <button class="b p" id="savebrief">Save brief</button><span id="briefmsg"></span></div>
+  <table id="rules"><thead><tr><th>ID</th><th>Type</th><th>Level</th><th>Rule</th><th>Source text</th><th>Japanese text</th><th>Char. style</th><th></th></tr></thead><tbody></tbody></table>
+</section>
+
+<section id="doc">
+  <div class="box">Open an IDML (InDesign: File &gt; Save As &gt; InDesign Markup). English to Japanese only. Content the app does not handle is refused before anything is sent.</div>
+  <div class="row"><input type="file" id="file" accept=".idml"><button class="b p" id="upload">Open</button><span id="upmsg"></span></div>
+  <div class="row"><span class="mut">Or open a saved example:</span><select id="samples"></select><button class="b" id="opensample">Open example</button></div>
+  <div id="scope"></div>
+</section>
+
+<section id="run">
+  <h3>API keys</h3>
+  <p class="mut">Kept in memory while the app runs. Never saved to disk.</p>
+  <div class="row"><label>Anthropic (translation) <input id="kA" type="password" size="40" autocomplete="off"></label>
+    <label>OpenAI (review) <input id="kB" type="password" size="40" autocomplete="off"></label>
+    <button class="b" id="savekeys">Set keys</button><span id="keymsg"></span></div>
+  <h3>What will be sent</h3>
+  <div id="preview" class="box"></div>
+  <div class="row"><button class="b p" id="go-tr">Translate</button><button class="b" id="go-rv">Run AI review</button>
+    <button class="b" id="cancel">Cancel</button><span id="jobmsg"></span></div>
+  <div id="runsum"></div>
+</section>
+
+<section id="find">
+  <div class="row"><span id="aistate"></span><button class="b" id="recheck">Re-run app checks</button>
+    <label><input type="checkbox" id="onlyf" checked> Only paragraphs with findings</label></div>
+  <div id="rulesum"></div>
+  <h3>Paragraphs</h3>
+  <p class="mut">Tags: &lt;gN&gt;…&lt;/gN&gt; formatting, &lt;xN/&gt; object in the text, &lt;lb/&gt; line break. Keep every tag; you may move it within the paragraph.</p>
+  <div id="segs"></div>
+</section>
+
+<section id="exp">
+  <div class="box">Export writes a working IDML and an HTML report. It does not say the translation is correct. Open the IDML in InDesign and check the layout before delivery.</div>
+  <div class="row"><button class="b p" id="export">Export</button><button class="b" id="openfolder">Open folder</button><a id="replink" href="/api/report" target="_blank" rel="noopener" style="display:none">Open report</a><span id="expmsg"></span></div>
+  <div id="expres"></div>
+</section>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>

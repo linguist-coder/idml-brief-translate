@@ -1,0 +1,20 @@
+{
+  "_note": "Planted review cases (spike 5). Base = fixtures/ja_reference.json (hand-written, may itself contain things a reviewer flags). Each set overrides some paragraphs with one planted problem each; every other paragraph is a negative. Set A may be used to adjust prompts. Set B is the holdout: do not change prompts or rules after looking at its results.",
+  "A": [
+    {"seg": "NFFD13CDE-tu4", "text": "<g1>電源</g1> ボタンを 2 秒間押し続けます。プリンターの<g3>準備ができる</g3>と、ステータスランプが<g2>緑色</g2>に点灯します。", "expect": ["B-01"], "planted": "POWER translated"},
+    {"seg": "NAF43CC64-tu1", "text": "プリンターの電源を切り、プリントヘッドが冷えるまで 5 分間待ちます。綿棒とイソプロピルアルコールでヘッドをやさしく拭きます。カバーを閉じる前に、ヘッドを乾かしてください。", "expect": ["M-omission", "B-08"], "planted": "safety sentence dropped"},
+    {"seg": "NFFD13CDE-tu6", "text": "TX-40 専用の<x1/>ラベル巻だけを使用してください。ほかのロールを使うと、給紙経路が詰まることがあります。", "expect": ["B-03"], "planted": "term not used"},
+    {"seg": "NFBF1B155-tu1", "text": "ヒント: ロールがカチッとはまるまで、カバーを開けたままにする。", "expect": ["B-07"], "planted": "plain form"},
+    {"seg": "NFF697A14-tu5", "text": "幅が 62 mm 未満のラベルには対応していません。", "expect": ["M-meaning"], "planted": "wider than -> narrower than"},
+    {"seg": "NFFD13CDE-tu2", "text": "このガイドでは、TX-40 のセットアップ、ラベルの装着、基本的なメンテナンスについて説明します。電源アダプターを接続する前に、<g1>安全上の注意</g1>をお読みください。保証期間は購入日から 1 年間です。<x2/>", "expect": ["M-addition"], "planted": "sentence added"}
+  ],
+  "B": [
+    {"seg": "NFFD13CDE-tu4", "text": "<g1>POWER</g1> ボタンを 2 秒間押し続けます。プリンターの<g3>準備ができる</g3>と、<g2>ステータスランプ</g2>が緑色に点灯します。", "expect": ["B-02"], "planted": "UI Label on the wrong word"},
+    {"seg": "NAF43CC64-tu1", "text": "プリンターの電源を切り、プリントヘッドが冷えるまで 5 分間待ちます。綿棒とイソプロピルアルコールでヘッドをやさしく拭きます。水や先のとがった道具は、できれば使わないほうがよいでしょう。カバーを閉じる前に、ヘッドを乾かしてください。", "expect": ["B-08", "M-meaning"], "planted": "safety wording softened"},
+    {"seg": "NFFD13CDE-tu5", "text": "設置の手順については、<x1/>を参照してください。", "expect": ["M-meaning"], "planted": "cleaning -> installation"},
+    {"seg": "NFF697A14-tu2", "text": "上部カバーを開き、ロールをセットします。<x1/>", "expect": ["M-omission"], "planted": "feed direction dropped"},
+    {"seg": "NCFAFE031-tu2", "text": "印字幅: 56 mm。速度: 最低 100 mm/秒。インターフェイス: USB-C。", "expect": ["M-meaning"], "planted": "up to -> at least"},
+    {"seg": "NFFD13CDE-tu6", "text": "TX-40 専用の<x1/>ラベルロールだけを使用すること。ほかのロールを使うと、給紙経路が詰まる。", "expect": ["B-07"], "planted": "plain form"},
+    {"seg": "NDFD42C45-tu1", "text": "<x1/>\t電源アダプターは、地域によっては別売りです。公式ストアでのご購入をおすすめします。", "expect": ["M-addition"], "planted": "sentence added"}
+  ]
+}
