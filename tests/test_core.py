@@ -212,8 +212,10 @@ class ReviewTests(Base):
         with self.assertRaises(CodeError):
             pipeline.edit_segment(st, self.brief, TU4, "POWER だけ")
         self.assertEqual(st.ai_review, "current")
+        self.assertEqual(st.edit_count, 0)
         pipeline.edit_segment(st, self.brief, TU4, REF[TU4].replace("押し続けます", "長押しします"))
         self.assertEqual(st.ai_review, "stale")
+        self.assertEqual(st.edit_count, 1)
         self.assertTrue(all(f.status == "stale" for f in st.findings if f.method == "ai"))
 
     def test_all_failed(self):

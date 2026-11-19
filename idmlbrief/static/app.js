@@ -189,6 +189,7 @@ async function refresh() {
   if (run && run.sample_label) say("jobmsg", "This is a saved example. Open your own IDML in 2 Document to translate.", "mut");
   else if (j && !j.running && j.error) say("jobmsg", j.error, "err");
   else if (j && !j.running) say("jobmsg", j.kind + " finished.", "ok");
+  else if (!j) say("jobmsg", "");
   $("go-tr").disabled = $("go-rv").disabled = !run || !!run.sample_label || (j && j.running);
   $("cancel").disabled = !(j && j.running);
   $("export").disabled = !run || !!run.sample_label || (j && j.running);

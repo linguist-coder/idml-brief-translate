@@ -188,7 +188,7 @@ def create_app(A: App) -> FastAPI:
         finally:
             p.unlink(missing_ok=True)
         st.input_name = name
-        A.state, A.work, A.export = st, work, None
+        A.state, A.work, A.export, A.job = st, work, None, None
         pipeline.save(st, work)
         return {"ok": True, "run_id": st.run_id}
 
@@ -317,6 +317,8 @@ def create_app(A: App) -> FastAPI:
 
     @api.post("/api/samples/{name}")
     def open_sample(name: str):
+        if A.busy():
+            raise HTTPException(409, "Wait for the running step to finish.")
         d = Path(__file__).resolve().parent / "samples"
         p = d / (Path(name).name + ".json")
         if not p.exists():
@@ -325,7 +327,7 @@ def create_app(A: App) -> FastAPI:
         data = json.loads(p.read_text(encoding="utf-8"))
         A.state = RunState.from_dict(data["state"])
         A.brief = Brief.from_dict(A.state.brief)
-        A.work, A.export = None, data.get("export")
+        A.work, A.export, A.job = None, data.get("export"), None
         return {"ok": True}
 
     @api.post("/api/shutdown")

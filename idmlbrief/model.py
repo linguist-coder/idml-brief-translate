@@ -122,7 +122,8 @@ class RunState:
     usage: list[Usage] = field(default_factory=list)
     ai_review: str = "not_run"  # not_run | current | stale | running | failed
     ai_review_reason: str = ""
-    doc_version: int = 0
+    doc_version: int = 0  # any change to targets or brief (used to bind AI review results)
+    edit_count: int = 0  # saved hand edits only
     codemap: dict = field(default_factory=dict)  # seg id -> {pair id: {"style":..,"overrides":{..}}}
     scope: dict = field(default_factory=dict)
     log: list[str] = field(default_factory=list)

@@ -80,6 +80,9 @@ class ServerTests(unittest.TestCase):
             server.ClaudeProvider, server.OpenAIProvider = orig
         st = self.c.get("/api/state").json()
         self.assertEqual(st["run"]["summary"]["ai_review"], "current")
+        self.assertEqual(self.A.state.edit_count, 0)  # translation is not a hand edit
+        self.c.put("/api/brief", json=self.A.brief.to_dict())
+        self.assertEqual(self.A.state.edit_count, 0)  # nor is a brief change
         # bad edit rejected, good edit makes review stale
         sid = "NFFD13CDE-tu4"
         self.assertEqual(self.c.put(f"/api/segment/{sid}", json={"text": "no tags"}).status_code, 400)
@@ -90,6 +93,11 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(Path(ex["idml"]).exists())
         rep = self.c.get("/api/report")
         self.assertIn("out of date", rep.text)
+        self.assertIn("hand edits 1", rep.text)
+        # opening another document drops the previous job (its message must not carry over)
+        self.assertIsNotNone(self.c.get("/api/state").json()["job"])
+        self.assertEqual(self.c.post("/api/upload", content=FIX.read_bytes(), headers={"X-Filename": "tx40.idml"}).status_code, 200)
+        self.assertIsNone(self.c.get("/api/state").json()["job"])
 
     def test_refused_upload(self):
         self.login()

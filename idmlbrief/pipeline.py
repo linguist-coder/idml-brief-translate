@@ -17,7 +17,7 @@ from .review import mark_stale
 from .translate import prepare
 from .xliff import Code
 
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.1.1"
 
 
 class ScopeRefused(ValueError):
@@ -80,6 +80,7 @@ def edit_segment(state: RunState, brief: Brief, sid: str, tagged: str):
     seg.edited = True
     seg.note = "edited by hand"
     state.doc_version += 1
+    state.edit_count += 1
     mark_stale(state, "The translation was edited after the AI review.")
     checks.run_machine(state, brief)
 

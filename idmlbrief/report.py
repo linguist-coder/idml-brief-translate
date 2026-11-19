@@ -39,7 +39,7 @@ def build(state: RunState, brief: Brief, export: dict | None) -> str:
     meta = [
         ("Input", f"{state.input_name} (sha256 {state.input_sha256[:16]}…)"),
         ("Brief", f"{brief.name} (hash {state.brief_hash[:16]}…)"),
-        ("Translation version", f"{state.targets_version()} / edit count {state.doc_version}"),
+        ("Translation version", f"{state.targets_version()} / hand edits {state.edit_count}"),
         ("Working IDML", f"{Path(ex['idml']).name if ex.get('idml') else 'not written'}" + (f" (sha256 {ex['idml_sha256'][:16]}…)" if ex.get("idml_sha256") else "")),
         ("Tools", f"IDML Brief Translate {ex.get('app_version', '')}, Okapi Tikal {ex.get('tikal', '')}"),
         ("Sent to", "; ".join(f"{k}: {v}" for k, v in DESTINATIONS.items())),
