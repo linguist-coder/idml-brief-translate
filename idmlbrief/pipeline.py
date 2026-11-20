@@ -9,7 +9,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import checks, codemap, gate, scope, tikal, xliff
+from . import checks, codemap, gate, jastyle, scope, tikal, xliff
 from .brief import Brief
 from .idmlfix import fix_package
 from .model import RunState, Seg, text_of
@@ -51,7 +51,8 @@ def open_run(idml: Path, brief: Brief, workroot: Path, settings: dict) -> tuple[
         codemap={sid: {pid: {"style": p.char_style or "", "overrides": p.overrides, "label": p.label()}
                        for pid, p in sc.pairs.items()} | {pid: {"element": k} for pid, k in sc.placeholders.items()}
                  for sid, sc in cm.items()},
-        scope={"translated_stories": rep.translated_stories, "excluded": rep.excluded, "warnings": rep.warnings},
+        scope={"translated_stories": rep.translated_stories, "excluded": rep.excluded, "warnings": rep.warnings,
+               "ja_line_breaking": jastyle.scan(idml, rep.translated_stories)},
     )
     prepare(state)
     checks.run_machine(state, brief)

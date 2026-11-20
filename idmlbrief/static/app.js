@@ -196,7 +196,10 @@ async function refresh() {
   if (run) {
     const sc = run.scope || {};
     $("scope").replaceChildren(el("p", {}, `${run.segs.length} paragraphs in ${(sc.translated_stories || []).length} stories.`),
-      (sc.excluded || []).length ? el("div", {}, el("b", {}, "Not translated by design:"), el("ul", {}, sc.excluded.map(([w, d]) => el("li", {}, w + ": " + d)))) : null);
+      (sc.excluded || []).length ? el("div", {}, el("b", {}, "Not translated by design:"), el("ul", {}, sc.excluded.map(([w, d]) => el("li", {}, w + ": " + d)))) : null,
+      (sc.ja_line_breaking || []).length ? el("div", { class: "warn" }, el("b", {}, "Japanese line breaking: "),
+        `${sc.ja_line_breaking.length} paragraph style(s) are not set up for Japanese (the app does not change styles; set them in InDesign):`,
+        el("ul", {}, sc.ja_line_breaking.map(d => el("li", {}, `${d.style}: ${d.composer}, kinsoku set ${d.kinsoku} (${d.paragraphs} paragraph(s))`)))) : null);
     const p = run.preview;
     $("preview").replaceChildren(
       el("div", {}, `Translation: ${p.paragraphs} paragraphs, ${p.characters} characters, ${p.requests} request(s) to ${p.destinations.translate}, model ${S.models.translate}.`),

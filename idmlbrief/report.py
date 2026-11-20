@@ -8,7 +8,7 @@ from __future__ import annotations
 from html import escape
 from pathlib import Path
 
-from . import checks
+from . import checks, jastyle
 from .brief import Brief
 from .llm import DESTINATIONS, estimate_cost
 from .model import APP_CHECKS, RunState
@@ -108,6 +108,17 @@ def build(state: RunState, brief: Brief, export: dict | None) -> str:
     # 3. layout
     out.append("<h2>3. InDesign layout</h2><p><b>Not checked.</b> Overset text, line breaks, fonts and page flow are only "
                "visible in InDesign. Update cross-references and the index there.</p>")
+    jl = (state.scope or {}).get("ja_line_breaking")
+    out.append("<h3>Japanese line breaking (read from the styles, nothing changed)</h3>")
+    if jl is None:
+        out.append("<p class='muted'>Not read for this run.</p>")
+    elif not jl:
+        out.append("<p>Every paragraph style that holds Japanese text uses a Japanese composer and a kinsoku set.</p>")
+    else:
+        out.append(f"<p class='warn'>{_e(jastyle.summary_line(jl))}</p>")
+        out.append("<table><tr><th>Paragraph style</th><th>Composer</th><th>Kinsoku set</th><th>Paragraphs</th></tr>"
+                   + "".join(f"<tr><td>{_e(d['style'])}</td><td>{_e(d['composer'])}</td><td>{_e(d['kinsoku'])}</td>"
+                             f"<td>{d['paragraphs']}</td></tr>" for d in jl) + "</table>")
 
     # paragraphs
     out.append("<h2>Paragraphs</h2><table><tr><th>ID</th><th>Source</th><th>Translation</th><th>Status</th></tr>")

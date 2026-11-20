@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from idmlbrief import checks, gate, pipeline, report, review, scope, translate, xliff  # noqa: E402
+from idmlbrief import checks, gate, jastyle, pipeline, report, review, scope, translate, xliff  # noqa: E402
 from idmlbrief.brief import Brief, Rule, default_brief  # noqa: E402
 from idmlbrief.llm import CallResult, MockProvider  # noqa: E402
 from idmlbrief.xliff import CodeError  # noqa: E402
@@ -294,6 +294,64 @@ class ReportTests(Base):
         html = report.build(st, b, None)
         self.assertNotIn("<script>", html)
         self.assertNotIn("<img", html)
+
+
+class JaLineBreakTests(unittest.TestCase):
+    """Read-only warning: styles holding Japanese text without a Japanese composer / kinsoku set."""
+
+    def _variant(self, styles_fn=None, story_fn=None):
+        tmp = Path(tempfile.mkdtemp(prefix="bl-ja-"))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        out = tmp / "v.idml"
+        with zipfile.ZipFile(FIX) as zi, zipfile.ZipFile(out, "w") as zo:
+            for i in zi.infolist():
+                data = zi.read(i.filename)
+                if i.filename == "Resources/Styles.xml" and styles_fn:
+                    data = styles_fn(data.decode("utf-8")).encode("utf-8")
+                if i.filename.startswith("Stories/") and story_fn:
+                    data = story_fn(data.decode("utf-8")).encode("utf-8")
+                zo.writestr(i, data, compress_type=zipfile.ZIP_STORED if i.filename == "mimetype" else zipfile.ZIP_DEFLATED)
+        return out
+
+    @staticmethod
+    def _japanese_root(s):
+        s = s.replace('Composer="HL Composer"', 'Composer="HL Composer J"', 1)
+        return s.replace('<KinsokuSet type="enumeration">Nothing</KinsokuSet>', '<KinsokuSet type="enumeration">HardKinsoku</KinsokuSet>', 1)
+
+    def test_fixture_warns_every_style(self):
+        rep = scope.scan(FIX)
+        got = jastyle.scan(FIX, rep.translated_stories)
+        self.assertIn("Body", [d["style"] for d in got])
+        self.assertTrue(all(d["kinsoku"] == "None" and d["composer"] == "Adobe Paragraph Composer" for d in got))
+        self.assertEqual(sum(d["paragraphs"] for d in got), 32)  # 33 paragraphs minus one empty anchor paragraph
+
+    def test_japanese_root_inherited_no_warning(self):
+        v = self._variant(self._japanese_root)
+        self.assertEqual(jastyle.scan(v, scope.scan(v).translated_stories), [])
+
+    def test_style_override_beats_based_on(self):
+        def fn(s):
+            s = self._japanese_root(s)
+            return s.replace('Self="ParagraphStyle/Body" Name="Body"', 'Self="ParagraphStyle/Body" Name="Body" Composer="HL Composer"', 1)
+        v = self._variant(fn)
+        got = jastyle.scan(v, scope.scan(v).translated_stories)
+        self.assertEqual([(d["style"], d["problems"]) for d in got], [("Body", ["not a Japanese composer"])])
+
+    def test_paragraph_override_counts(self):
+        v = self._variant(self._japanese_root,
+                          lambda s: s.replace('AppliedParagraphStyle="ParagraphStyle/Caption"',
+                                              'AppliedParagraphStyle="ParagraphStyle/Caption" Composer="HL Single"'))
+        got = jastyle.scan(v, scope.scan(v).translated_stories)
+        self.assertEqual([(d["style"], d["composer"]) for d in got], [("Caption", "Adobe Single-line Composer")])
+
+    def test_open_run_and_report(self):
+        tmp = Path(tempfile.mkdtemp(prefix="bl-ja-run-"))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        st, _ = pipeline.open_run(FIX, default_brief(), tmp, {})
+        self.assertTrue(st.scope["ja_line_breaking"])
+        html = report.build(st, default_brief(), None)
+        self.assertIn("Japanese line breaking", html)
+        self.assertIn("Adobe Paragraph Composer", html)
 
 
 class BriefTests(unittest.TestCase):
