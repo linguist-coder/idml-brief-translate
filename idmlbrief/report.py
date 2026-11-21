@@ -113,11 +113,11 @@ def build(state: RunState, brief: Brief, export: dict | None) -> str:
     if jl is None:
         out.append("<p class='muted'>Not read for this run.</p>")
     elif not jl:
-        out.append("<p>Every paragraph style that holds Japanese text uses a Japanese composer and a kinsoku set.</p>")
+        out.append("<p>Every paragraph style that holds Japanese text uses a Japanese composer, a kinsoku set and a mojikumi set.</p>")
     else:
         out.append(f"<p class='warn'>{_e(jastyle.summary_line(jl))}</p>")
-        out.append("<table><tr><th>Paragraph style</th><th>Composer</th><th>Kinsoku set</th><th>Paragraphs</th></tr>"
-                   + "".join(f"<tr><td>{_e(d['style'])}</td><td>{_e(d['composer'])}</td><td>{_e(d['kinsoku'])}</td>"
+        out.append("<table><tr><th>Paragraph style</th><th>Composer</th><th>Kinsoku set</th><th>Mojikumi set</th><th>Paragraphs</th></tr>"
+                   + "".join(f"<tr><td>{_e(d['style'])}</td><td>{_e(d['composer'])}</td><td>{_e(d['kinsoku'])}</td><td>{_e(d.get('mojikumi', ''))}</td>"
                              f"<td>{d['paragraphs']}</td></tr>" for d in jl) + "</table>")
 
     # paragraphs

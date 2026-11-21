@@ -316,13 +316,15 @@ class JaLineBreakTests(unittest.TestCase):
     @staticmethod
     def _japanese_root(s):
         s = s.replace('Composer="HL Composer"', 'Composer="HL Composer J"', 1)
-        return s.replace('<KinsokuSet type="enumeration">Nothing</KinsokuSet>', '<KinsokuSet type="enumeration">HardKinsoku</KinsokuSet>', 1)
+        s = s.replace('<KinsokuSet type="enumeration">Nothing</KinsokuSet>', '<KinsokuSet type="enumeration">HardKinsoku</KinsokuSet>', 1)
+        return s.replace('<Mojikumi type="enumeration">Nothing</Mojikumi>', '<Mojikumi type="enumeration">LineEndAllOneHalfEmEnum</Mojikumi>', 1)
 
     def test_fixture_warns_every_style(self):
         rep = scope.scan(FIX)
         got = jastyle.scan(FIX, rep.translated_stories)
         self.assertIn("Body", [d["style"] for d in got])
-        self.assertTrue(all(d["kinsoku"] == "None" and d["composer"] == "Adobe Paragraph Composer" for d in got))
+        self.assertTrue(all(d["kinsoku"] == "None" and d["mojikumi"] == "None" and d["composer"] == "Adobe Paragraph Composer" for d in got))
+        self.assertEqual(got[0]["problems"], ["kinsoku set is None", "mojikumi set is None", "not a Japanese composer"])
         self.assertEqual(sum(d["paragraphs"] for d in got), 32)  # 33 paragraphs minus one empty anchor paragraph
 
     def test_japanese_root_inherited_no_warning(self):
@@ -336,6 +338,28 @@ class JaLineBreakTests(unittest.TestCase):
         v = self._variant(fn)
         got = jastyle.scan(v, scope.scan(v).translated_stories)
         self.assertEqual([(d["style"], d["problems"]) for d in got], [("Body", ["not a Japanese composer"])])
+
+    def test_japanese_composer_without_mojikumi(self):
+        # the case the composer warning misses: switched to the Japanese composer, mojikumi still None
+        def fn(s):
+            s = self._japanese_root(s)
+            return s.replace('<Mojikumi type="enumeration">LineEndAllOneHalfEmEnum</Mojikumi>', '<Mojikumi type="enumeration">Nothing</Mojikumi>', 1)
+        v = self._variant(fn)
+        got = jastyle.scan(v, scope.scan(v).translated_stories)
+        self.assertTrue(got)
+        self.assertTrue(all(d["problems"] == ["mojikumi set is None"] and d["composer"] == "Adobe Japanese Paragraph Composer" for d in got))
+
+    def test_mojikumi_table_override(self):
+        # a named mojikumi table on the paragraph beats None on the style
+        def fn(s):
+            return s.replace('<Mojikumi type="enumeration">LineEndAllOneHalfEmEnum</Mojikumi>', '<Mojikumi type="enumeration">Nothing</Mojikumi>', 1)
+        v = self._variant(lambda s: fn(self._japanese_root(s)),
+                          lambda s: s.replace('AppliedParagraphStyle="ParagraphStyle/Caption">',
+                                              'AppliedParagraphStyle="ParagraphStyle/Caption"><Properties><Mojikumi type="object">MojikumiTable/My%3aSet</Mojikumi></Properties>'))
+        got = jastyle.scan(v, scope.scan(v).translated_stories)
+        self.assertNotIn("Caption", [d["style"] for d in got])
+        self.assertEqual(jastyle.mojikumi_name("MojikumiTable/My%3aSet"), "My:Set")
+        self.assertEqual(jastyle.mojikumi_name("LineEndAllOneHalfEmEnum"), "LineEndAllOneHalfEm")
 
     def test_paragraph_override_counts(self):
         v = self._variant(self._japanese_root,
@@ -352,6 +376,7 @@ class JaLineBreakTests(unittest.TestCase):
         html = report.build(st, default_brief(), None)
         self.assertIn("Japanese line breaking", html)
         self.assertIn("Adobe Paragraph Composer", html)
+        self.assertIn("Mojikumi set", html)
 
 
 class BriefTests(unittest.TestCase):

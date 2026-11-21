@@ -1,9 +1,10 @@
 """Japanese line-breaking warning (read only).
 
 The app swaps text and leaves Styles.xml as it is, so English paragraph styles
-keep their Latin composer and kinsoku set "None". This module reads the
-effective composer and kinsoku set of every paragraph that will hold Japanese
-text and lists the ones that are not set up for Japanese. Nothing is changed.
+keep their Latin composer, kinsoku set "None" and mojikumi set "None". This
+module reads the effective composer, kinsoku set and mojikumi set of every
+paragraph that will hold Japanese text and lists the ones that are not set up
+for Japanese. Nothing is changed.
 
 Effective value = paragraph override in the story > the style > its BasedOn
 chain > [No paragraph style].
@@ -12,6 +13,7 @@ from __future__ import annotations
 
 import zipfile
 from pathlib import Path
+from urllib.parse import unquote
 
 from lxml import etree
 
@@ -37,7 +39,7 @@ def _parser():
 
 
 def _props(e) -> dict:
-    """Composer / KinsokuSet / BasedOn set directly on a style or a paragraph range."""
+    """Composer / KinsokuSet / Mojikumi / BasedOn set directly on a style or a paragraph range."""
     out = {}
     if e.get("Composer"):
         out["composer"] = e.get("Composer")
@@ -48,6 +50,8 @@ def _props(e) -> dict:
             t = _local(c)
             if t == "KinsokuSet":
                 out["kinsoku"] = (c.text or "").strip()
+            elif t == "Mojikumi":
+                out["mojikumi"] = (c.text or "").strip()
             elif t == "BasedOn":
                 out["based_on"] = (c.text or "").strip()
     return out
@@ -64,6 +68,17 @@ def kinsoku_name(v: str) -> str:
     if v.startswith("KinsokuTable/"):
         return v.split("/", 1)[1]
     return KINSOKU.get(v, v)
+
+
+def mojikumi_name(v: str) -> str:
+    """Nothing -> None, LineEndAllOneHalfEmEnum -> LineEndAllOneHalfEm, MojikumiTable/<name> -> <name>."""
+    if not v:
+        return "unknown"
+    if v == "Nothing":
+        return "None"
+    if v.startswith("MojikumiTable/"):
+        return unquote(v.split("/", 1)[1])
+    return v.removesuffix("Enum")
 
 
 def is_japanese_composer(v: str) -> bool:
@@ -104,9 +119,11 @@ def _style_name(self_id: str, styles: dict) -> str:
 
 
 def scan(idml: Path, story_ids) -> list[dict]:
-    """Return one entry per (style, composer, kinsoku) that is not set up for Japanese.
+    """Return one entry per (style, composer, kinsoku, mojikumi) that is not set up for Japanese.
 
-    Each entry: style, composer, kinsoku (display names), problems (list), paragraphs (count).
+    Each entry: style, composer, kinsoku, mojikumi (display names), problems (list), paragraphs (count).
+    Mojikumi only takes effect under a Japanese composer, but a style on mojikumi None is
+    flagged either way so one pass lists everything to set.
     """
     want = set(story_ids or [])
     with zipfile.ZipFile(idml) as z:
@@ -157,19 +174,22 @@ def scan(idml: Path, story_ids) -> list[dict]:
                 own = _props(psr)
                 comp = own.get("composer") or resolve(sid, "composer") or ""
                 kin = own.get("kinsoku") or resolve(sid, "kinsoku") or ""
-                key = (_style_name(sid, styles), comp, kin)
+                moj = own.get("mojikumi") or resolve(sid, "mojikumi") or ""
+                key = (_style_name(sid, styles), comp, kin, moj)
                 groups[key] = groups.get(key, 0) + n_par
 
     out = []
-    for (style, comp, kin), count in groups.items():
+    for (style, comp, kin, moj), count in groups.items():
         problems = []
         if kin == "Nothing":
             problems.append("kinsoku set is None")
+        if moj == "Nothing":
+            problems.append("mojikumi set is None")
         if comp and not is_japanese_composer(comp):
             problems.append("not a Japanese composer")
         if problems:
             out.append({"style": style, "composer": composer_name(comp), "kinsoku": kinsoku_name(kin),
-                        "problems": problems, "paragraphs": count})
+                        "mojikumi": mojikumi_name(moj), "problems": problems, "paragraphs": count})
     out.sort(key=lambda d: (-d["paragraphs"], d["style"]))
     return out
 
@@ -179,4 +199,5 @@ def summary_line(entries: list[dict]) -> str:
         return ""
     return (f"{len(entries)} paragraph style(s) that will hold Japanese text are not set up for Japanese line "
             "breaking. With the kinsoku set at None, nothing stops a 。 or 、 from starting a line. "
+            "With the mojikumi set at None, the spacing around 、 and 。 is not adjusted. "
             "The app does not change styles. Set them in InDesign.")

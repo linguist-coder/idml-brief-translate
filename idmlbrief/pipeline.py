@@ -17,7 +17,7 @@ from .review import mark_stale
 from .translate import prepare
 from .xliff import Code
 
-APP_VERSION = "0.1.1"
+APP_VERSION = "0.1.2"
 
 
 class ScopeRefused(ValueError):

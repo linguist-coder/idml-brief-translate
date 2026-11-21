@@ -11,13 +11,13 @@ It was built by Linguist Coder to show this workflow on one four-page test docum
 3. **Translate.** Claude translates paragraph by paragraph. Character styles, footnote references, cross-references and index markers are sent as tags. A tag may move inside its paragraph to follow Japanese word order. A missing, repeated, unknown or moved-out tag fails the check, and the paragraph is translated once more. If it still fails, the source paragraph is kept and the report lists it.
 4. **Check.** The app checks tags, terms, words to keep, numbers and the style placement. An OpenAI model then reviews the free-text rules and three built-in checks (`M-meaning`, `M-omission`, `M-addition`). Findings with any other rule ID are discarded.
 5. **Edit.** You edit the Japanese text. An edit that breaks a tag is refused. When you save an edit, the app automatically reruns its checks and marks the previous AI review as out of date. Select **Run AI review** to review all translated paragraphs again.
-6. **Export.** The app rebuilds the IDML with Tikal and runs a structure check against the input (footnotes, cross-references, index markers, anchored objects, tables and character formatting; order inside a paragraph may change). If the check reports a problem, export is blocked. The HTML report has three sections: language and brief, codes and structure, and InDesign layout, which is always "not checked". The layout section does list paragraph styles that will hold Japanese text but have no kinsoku set or a non-Japanese composer (read from the IDML, not changed).
+6. **Export.** The app rebuilds the IDML with Tikal and runs a structure check against the input (footnotes, cross-references, index markers, anchored objects, tables and character formatting; order inside a paragraph may change). If the check reports a problem, export is blocked. The HTML report has three sections: language and brief, codes and structure, and InDesign layout, which is always "not checked". The layout section does list paragraph styles that will hold Japanese text but have no kinsoku set, no mojikumi set or a non-Japanese composer (read from the IDML, not changed).
 
 ## What it does not do
 
 - Languages other than English to Japanese, files other than IDML, systems other than Windows.
 - Text on hidden layers, index topic names and cross-reference format text are left as they are (listed in the report).
-- It does not change paragraph styles. English styles keep their composer, kinsoku set and language. The app warns about them (step 2 and the report); set them in InDesign.
+- It does not change paragraph styles. English styles keep their composer, kinsoku set, mojikumi set and language. The app warns about them (step 2 and the report); set them in InDesign.
 - It does not check the layout. The structure check does not establish whether formatting is attached to the intended words; only placements named in the brief (B-02 in the default brief) are checked. Open the IDML in InDesign and look.
 - It has been tried on one test document (`fixtures/tx40_ja_base.idml`, 4 pages, 33 paragraphs). Other IDML files may contain things it refuses or has not seen.
 
